@@ -8,6 +8,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.action_chains import ActionChains
 
 def calcular_frete_jadlog(origem, destino, peso):
+    driver = None
     try:
         options = Options()
         # options.add_argument("--headless")
@@ -17,15 +18,13 @@ def calcular_frete_jadlog(origem, destino, peso):
         driver = webdriver.Chrome(service=service, options=options)
         driver.maximize_window()
 
-        driver.get("https://www.jadlog.com.br/jadlog/home")
+        driver.get("https://www.jadlog.com.br/jadlog/simulacao")
         wait = WebDriverWait(driver, 20)
-        time.sleep(3)
 
         # Fechar pop-up de alerta (clicando fora da janela)
         try:
-            modal = driver.find_element(By.XPATH, '//*[@id="modalHome"]')
+            modal = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="modalHome"]')))
             actions = ActionChains(driver)
-            # Clica 50px acima e à esquerda do modal (ajuste se necessário)
             actions.move_to_element_with_offset(modal, -50, -50).click().perform()
             print("Pop-up de alerta fechado (clic fora da janela).")
             time.sleep(1)
@@ -41,10 +40,11 @@ def calcular_frete_jadlog(origem, destino, peso):
         except Exception:
             print("Pop-up de cookies não encontrado.")
 
-        origem_input = driver.find_element(By.ID, "cepOrigem")
-        destino_input = driver.find_element(By.ID, "cepDestino")
-        peso_input = driver.find_element(By.ID, "peso")
-        btn_calcular = driver.find_element(By.ID, "btnCalcular")
+        # Aguarda os campos aparecerem usando os novos XPaths/IDs
+        origem_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="origem"]')))
+        destino_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="destino"]')))
+        peso_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="peso"]')))
+        btn_calcular = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="form_precifica"]/div[3]/div[4]/div/input')))
 
         origem_input.send_keys(origem)
         destino_input.send_keys(destino)
@@ -53,8 +53,11 @@ def calcular_frete_jadlog(origem, destino, peso):
 
         print("Campos preenchidos e botão clicado.")
 
+        # Aguarda o resultado aparecer (ajuste o seletor conforme necessário)
         resultado = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "valor-total"))).text
         prazo = driver.find_element(By.CLASS_NAME, "prazo-entrega").text
+
+        time.sleep(3)  # Mantém a janela aberta por mais tempo para visualização
 
         driver.quit()
 
@@ -68,5 +71,6 @@ def calcular_frete_jadlog(origem, destino, peso):
         }
 
     except Exception as e:
-        driver.quit()
+        if driver:
+            driver.quit()
         return {"erro": f"Erro ao calcular frete: {str(e)}"}
