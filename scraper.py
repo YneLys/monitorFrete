@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.action_chains import ActionChains
 
 def calcular_frete_jadlog(origem, destino, peso):
     try:
@@ -14,17 +15,19 @@ def calcular_frete_jadlog(origem, destino, peso):
         service = Service(r"C:\Users\LorrayneBentoPinheir\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe")
 
         driver = webdriver.Chrome(service=service, options=options)
-        driver.maximize_window()  # Maximiza a janela
+        driver.maximize_window()
 
         driver.get("https://www.jadlog.com.br/jadlog/home")
         wait = WebDriverWait(driver, 20)
-        time.sleep(3)  # Aguarde a página carregar
+        time.sleep(3)
 
-        # Fechar pop-up de alerta (X no canto superior direito)
+        # Fechar pop-up de alerta (clicando fora da janela)
         try:
-            close_alert = driver.find_element(By.CSS_SELECTOR, "div.swal2-popup button.swal2-close")
-            close_alert.click()
-            print("Pop-up de alerta fechado.")
+            modal = driver.find_element(By.XPATH, '//*[@id="modalHome"]')
+            actions = ActionChains(driver)
+            # Clica 50px acima e à esquerda do modal (ajuste se necessário)
+            actions.move_to_element_with_offset(modal, -50, -50).click().perform()
+            print("Pop-up de alerta fechado (clic fora da janela).")
             time.sleep(1)
         except Exception:
             print("Pop-up de alerta não encontrado.")
